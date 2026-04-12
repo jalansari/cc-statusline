@@ -1,0 +1,35 @@
+name: PR
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Python venv
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate \
+            && pip install --upgrade pip \
+            && pip install -e ".[test]"
+
+      - name: Tests
+        run: |
+          source .venv/bin/activate \
+            && pytest --cov=cc_statusline --cov-report=html
+
+      - name: Store coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: cov-reports
+          path: |
+            htmlcov
+          retention-days: 7
