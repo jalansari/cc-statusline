@@ -15,7 +15,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "claudecode-statusline"
+name = "cc-statusline"
 authors = [{ name = "j" }]
 description = "Powerline-style statusline for ClaudeCode"
 readme = "README.md"
@@ -46,8 +46,8 @@ publish = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jalansari/claudecode-statusline"
-Issues = "https://github.com/jalansari/claudecode-statusline/issues"
+Homepage = "https://github.com/jalansari/cc-statusline"
+Issues = "https://github.com/jalansari/cc-statusline/issues"
 
 [project.scripts]
 cc-statusline = "cc_statusline:main"
