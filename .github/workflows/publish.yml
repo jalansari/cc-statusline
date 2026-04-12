@@ -1,0 +1,26 @@
+name: Publish
+on:
+  release:
+    types:
+      - published
+
+env:
+  TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+  TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+
+jobs:
+  package:
+    name: Publish
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Build and publish
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate \
+            && pip install --upgrade pip \
+            && pip install -e ".[package,publish]" \
+            && python -m build \
+            && twine upload dist/*
