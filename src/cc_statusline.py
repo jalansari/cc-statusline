@@ -11,7 +11,6 @@ import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-
 debug_info = ""
 
 
@@ -71,6 +70,9 @@ RESET = "\033[0m"
 BOLD = "\033[1m"
 
 
+USER_AGENT_STRING = "cc-statusline/0.0.1"
+
+
 CACHE_DIR = os.path.join(
     os.environ.get("TMPDIR", "/tmp"), f"claude_status_cache_{os.getuid()}"
 )
@@ -102,17 +104,89 @@ class LangDetectRules:
 
 
 LANG_DETECT_RULES: list[LangDetectRules] = [
-    LangDetectRules(ICON_TERRAFORM, [], [".tf"], [], [".terraform"]),
-    LangDetectRules(ICON_PERL, [], [".pl", ".pm"], ["Perl"], []),
-    LangDetectRules(ICON_NODE, ["package.json", ".nvmrc", ".node-version"], [".js", ".mjs", ".cjs"], ["node_modules"], []),
-    LangDetectRules(ICON_TYPESCRIPT, ["tsconfig.json"], [".ts", ".tsx"], [], []),
-    LangDetectRules(ICON_PYTHON, ["pyproject.toml", "setup.py", "requirements.txt", "Pipfile", ".python-version"], [".py"], [".venv"], []),
-    LangDetectRules(ICON_RUST, ["Cargo.toml"], [".rs"], [], []),
-    LangDetectRules(ICON_GO, ["go.mod"], [".go"], [], []),
-    LangDetectRules(ICON_JAVA, ["pom.xml", "build.gradle", "build.gradle.kts"], [".java"], [], []),
-    LangDetectRules(ICON_RUBY, ["Gemfile", "Rakefile", ".ruby-version"], [".rb"], [], []),
-    LangDetectRules(ICON_SHELL, [], [".sh", ".bash", ".zsh"], [], []),
-    LangDetectRules(ICON_DOCKER, ["Dockerfile", "docker-compose.yml", "docker-compose.yaml"], [], [], []),
+    LangDetectRules(
+        ICON_TERRAFORM,
+        [],
+        [".tf"],
+        [],
+        [".terraform"],
+    ),
+    LangDetectRules(
+        ICON_PERL,
+        [],
+        [".pl", ".pm"],
+        ["Perl"],
+        [],
+    ),
+    LangDetectRules(
+        ICON_NODE,
+        ["package.json", ".nvmrc", ".node-version"],
+        [".js", ".mjs", ".cjs"],
+        ["node_modules"],
+        [],
+    ),
+    LangDetectRules(
+        ICON_TYPESCRIPT,
+        ["tsconfig.json"],
+        [".ts", ".tsx"],
+        [],
+        [],
+    ),
+    LangDetectRules(
+        ICON_PYTHON,
+        [
+            "pyproject.toml",
+            "setup.py",
+            "requirements.txt",
+            "Pipfile",
+            ".python-version",
+        ],
+        [".py"],
+        [".venv"],
+        [],
+    ),
+    LangDetectRules(
+        ICON_RUST,
+        ["Cargo.toml"],
+        [".rs"],
+        [],
+        [],
+    ),
+    LangDetectRules(
+        ICON_GO,
+        ["go.mod"],
+        [".go"],
+        [],
+        [],
+    ),
+    LangDetectRules(
+        ICON_JAVA,
+        ["pom.xml", "build.gradle", "build.gradle.kts"],
+        [".java"],
+        [],
+        [],
+    ),
+    LangDetectRules(
+        ICON_RUBY,
+        ["Gemfile", "Rakefile", ".ruby-version"],
+        [".rb"],
+        [],
+        [],
+    ),
+    LangDetectRules(
+        ICON_SHELL,
+        [],
+        [".sh", ".bash", ".zsh"],
+        [],
+        [],
+    ),
+    LangDetectRules(
+        ICON_DOCKER,
+        ["Dockerfile", "docker-compose.yml", "docker-compose.yaml"],
+        [],
+        [],
+        [],
+    ),
 ]
 
 
@@ -273,7 +347,9 @@ class SystemInfo:
         return self._creds_data
 
     def get_subscription_type(self) -> str:
-        return self.__get_creds_data().get("claudeAiOauth", {}).get("subscriptionType", "")
+        return (
+            self.__get_creds_data().get("claudeAiOauth", {}).get("subscriptionType", "")
+        )
 
     @staticmethod
     def get_days_remaining_in_month() -> int:
@@ -393,7 +469,11 @@ class ClaudeUsageInfo:
                 oauth_info = creds.get("claudeAiOauth", {})
                 access_token = oauth_info.get("accessToken", "")
                 refresh_token = oauth_info.get("refreshToken", "")
-                ret = (access_token, refresh_token) if access_token and refresh_token else None
+                ret = (
+                    (access_token, refresh_token)
+                    if access_token and refresh_token
+                    else None
+                )
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             pass
         return ret
@@ -404,13 +484,15 @@ class ClaudeUsageInfo:
             self.REFRESH_URL,
             headers={
                 "Content-Type": "application/json",
-                "User-Agent": "ja-claude-status/0.0.1",
+                "User-Agent": USER_AGENT_STRING,
             },
-            data=json.dumps({
-                "clientId": self.CLAUDE_CODE_CLIENT_ID,
-                "grantType": "refresh_token",
-                "refreshToken": refresh_token,
-            }).encode("utf-8"),
+            data=json.dumps(
+                {
+                    "clientId": self.CLAUDE_CODE_CLIENT_ID,
+                    "grantType": "refresh_token",
+                    "refreshToken": refresh_token,
+                }
+            ).encode("utf-8"),
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
             refresh_data = json.loads(resp.read())
@@ -442,7 +524,7 @@ class ClaudeUsageInfo:
             headers={
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
-                "User-Agent": "ja-claude-status/0.0.1",
+                "User-Agent": USER_AGENT_STRING,
             },
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -506,7 +588,9 @@ class ClaudeInfo:
         input_tokens = usage_dict.get("input_tokens", 0)
         cache_creation_input_tokens = usage_dict.get("cache_creation_input_tokens", 0)
         cache_read_input_tokens = usage_dict.get("cache_read_input_tokens", 0)
-        all_input_tokens = input_tokens + cache_creation_input_tokens + cache_read_input_tokens
+        all_input_tokens = (
+            input_tokens + cache_creation_input_tokens + cache_read_input_tokens
+        )
         return all_input_tokens
 
     # -- Getters: session --
@@ -593,7 +677,7 @@ def render_statusline() -> str:
     sysinfo = SystemInfo(session_id)
     sysinfo.initialise()
     is_enterprise = sysinfo.get_subscription_type() == "enterprise"
-    usage : ClaudeUsageInfo | None = None
+    usage: ClaudeUsageInfo | None = None
     if not is_enterprise:
         usage = ClaudeUsageInfo(session_id)
         usage.initialise()
@@ -615,7 +699,14 @@ def render_statusline() -> str:
         worktree_icon = f" {ICON_WORKTREE}" if claude_info.get_worktree() else ""
         lang_icon = sysinfo.detect_language()
         lang_suffix = f" {lang_icon}" if lang_icon else ""
-        segments.append(Segment(f" {ICON_BRANCH}{worktree_icon} {branch}{lang_suffix} ", branch_color, C_BRANCH_BG, bold=True))
+        segments.append(
+            Segment(
+                f" {ICON_BRANCH}{worktree_icon} {branch}{lang_suffix} ",
+                branch_color,
+                C_BRANCH_BG,
+                bold=True,
+            )
+        )
 
     # Model segment
     model = claude_info.get_model_name()
@@ -627,19 +718,44 @@ def render_statusline() -> str:
     current_used = f"{current_used_raw / 1000:.3g}k"
     ctx_fg = C_TOKENS_CURR_BIG_FG if current_context_pct >= 80 else C_TOKENS_CURR_FG
     cost_usd = claude_info.get_cost_usd()
-    segments.append(Segment(f" {ICON_CURRENT_CONTEXT} {current_context_pct}% | {current_used} | {cost_usd:.2f}$ ", ctx_fg, C_TOKENS_CURR_BG, bold=True))
+    segments.append(
+        Segment(
+            f" {ICON_CURRENT_CONTEXT} {current_context_pct}% | {current_used} | {cost_usd:.2f}$ ",
+            ctx_fg,
+            C_TOKENS_CURR_BG,
+            bold=True,
+        )
+    )
 
     if usage:
         window_pct = usage.get_window_pct()
         window_time = _format_time_remaining(usage.get_window_resets_at())
         weekly_pct = usage.get_weekly_pct()
         weekly_time = _format_time_remaining(usage.get_weekly_resets_at())
-        segments.append(Segment(f" {ICON_WINDOW_QUOTA} {window_pct:.0f}% ({window_time}) ", C_TOKENS_FG, C_TOKENS_BG))
-        segments.append(Segment(f" {ICON_WEEK_QUOTA} {weekly_pct:.0f}% ({weekly_time}) ", C_TOKENS_WEEK_FG, C_TOKENS_WEEK_BG))
+        segments.append(
+            Segment(
+                f" {ICON_WINDOW_QUOTA} {window_pct:.0f}% ({window_time}) ",
+                C_TOKENS_FG,
+                C_TOKENS_BG,
+            )
+        )
+        segments.append(
+            Segment(
+                f" {ICON_WEEK_QUOTA} {weekly_pct:.0f}% ({weekly_time}) ",
+                C_TOKENS_WEEK_FG,
+                C_TOKENS_WEEK_BG,
+            )
+        )
     else:
         monthly_cost = sysinfo.get_monthly_cost() + cost_usd
         days_left = sysinfo.get_days_remaining_in_month()
-        segments.append(Segment(f" {ICON_ENTERPRISE}  ${monthly_cost:.2f} {days_left}d ", C_ENTERPRISE_FG, C_ENTERPRISE_BG))
+        segments.append(
+            Segment(
+                f" {ICON_ENTERPRISE}  ${monthly_cost:.2f} {days_left}d ",
+                C_ENTERPRISE_FG,
+                C_ENTERPRISE_BG,
+            )
+        )
 
     # Atlassian segments (acli auth + MCP auth, independently colored)
     gh_color = C_AUTHD_OK if sysinfo.get_gh_authd() else C_AUTHD_FAIL
