@@ -60,4 +60,3 @@ py-modules = ["cc_statusline"]
 testpaths = ["tests"]
 
 [tool.setuptools_scm]
-

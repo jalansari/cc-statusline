@@ -2,12 +2,14 @@
 
 - [Claude Code Status Line](#claude-code-status-line)
   - [Introduction](#introduction)
-  - [Segments](#segments)
-    - [Segment breakdown](#segment-breakdown)
-    - [Detected languages](#detected-languages)
   - [Installation](#installation)
     - [Configuration](#configuration)
-  - [Caching](#caching)
+    - [Upgrade](#upgrade)
+  - [Features](#features)
+    - [Segments](#segments)
+      - [Segment breakdown](#segment-breakdown)
+      - [Detected languages](#detected-languages)
+    - [Caching](#caching)
   - [Development](#development)
     - [Testing](#testing)
     - [Build and publish](#build-and-publish)
@@ -28,58 +30,16 @@ Recommendation is to install either:
 - FiraCode Nerd Font
 - JetBrainsMono Nerd Font
 
-## Segments
-
-```
-project   >   branch_name   >   ai_model   >   ctx% | tokens | cost   >   quota / usages / enterprise   >   cli | mcp
-```
-
-Example (Pro/Max plan):
-
-```
- my-app   >   feat/abc123   >   Opus 4.6   >   12% | 58.3k | 1.42$   >   34% (2h05m)   >   61% (4.2d)   >   cli | mcp
-```
-
-Example (Enterprise plan):
-
-```
- my-app   >   feat/abc123   >   Opus 4.6   >   12% | 58.3k | 1.42$   >   $78.50 22d   >   cli | mcp
-```
-
-### Segment breakdown
-
-| #   | Segment          | Description                                                                                                                                                                  |
-| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Directory**    | Current working directory name.                                                                                                                                              |
-| 2   | **Git branch**   | Branch name with color coding: red for `main`/`master`, yellow for `staging`, blue otherwise. Shows worktree icon if in a worktree. And, language icon, based on best guess. |
-| 3   | **Model**        | Active Claude model name.                                                                                                                                                    |
-| 4   | **Context**      | Context window usage: percentage, input tokens, and session cost (USD). Turns red at 80%+ usage.                                                                             |
-| 5a  | **Window quota** | *(Pro/Max only)* 5-hour rolling usage percentage and time until reset.                                                                                                       |
-| 5b  | **Weekly quota** | *(Pro/Max only)* 7-day usage percentage and time until reset.                                                                                                                |
-| 5c  | **Enterprise**   | *(Enterprise only)* Monthly cumulative cost* (all sessions) and days remaining in billing period.                                                                            |
-| 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI.                                                                                  |
-| 6b  | **Services**     | Auth status for MCP services (green = authenticated, red = not): Notion MCP, Atlassian MCP, Figma MCP.                                                                       |
-
-\* Cost is estimated, and requires the cost tracking hook to function.
-
-### Detected languages
-
-The branch segment appends an icon for the detected project language:
-
-- Terraform
-- Node.js
-- TypeScript
-- Python
-- Rust
-- Go
-- Java
-- Perl
-- Shell
-
 ## Installation
 
 ```bash
 pip install cc-statusline
+```
+
+On newer Linux systems, install with:
+
+```bash
+pip3 install --break-system-packages cc-statusline
 ```
 
 It is recommended to install this status line with the cost tracking hook:
@@ -101,7 +61,71 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-## Caching
+### Upgrade
+
+Upgrade with pip regularly:
+
+```bash
+pip install cc-statusline -U
+```
+
+On newer Linux systems, install with:
+
+```bash
+pip3 install --break-system-packages cc-statusline -U
+```
+
+## Features
+
+### Segments
+
+```
+project   >   branch_name   >   ai_model   >   ctx% | tokens | cost   >   quota / usages / enterprise   >   cli | mcp
+```
+
+Example (Pro/Max plan):
+
+```
+ my-app   >   feat/abc123   >   Opus 4.6   >   12% | 58.3k | 1.42$   >   34% (2h05m)   >   61% (4.2d)   >   cli | mcp
+```
+
+Example (Enterprise plan):
+
+```
+ my-app   >   feat/abc123   >   Opus 4.6   >   12% | 58.3k | 1.42$   >   $78.50 22d   >   cli | mcp
+```
+
+#### Segment breakdown
+
+| #   | Segment          | Description                                                                                                                                                                  |
+| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Directory**    | Current working directory name.                                                                                                                                              |
+| 2   | **Git branch**   | Branch name with color coding: red for `main`/`master`, yellow for `staging`, blue otherwise. Shows worktree icon if in a worktree. And, language icon, based on best guess. |
+| 3   | **Model**        | Active Claude model name.                                                                                                                                                    |
+| 4   | **Context**      | Context window usage: percentage, input tokens, and session cost (USD). Turns red at 80%+ usage.                                                                             |
+| 5a  | **Window quota** | *(Pro/Max only)* 5-hour rolling usage percentage and time until reset.                                                                                                       |
+| 5b  | **Weekly quota** | *(Pro/Max only)* 7-day usage percentage and time until reset.                                                                                                                |
+| 5c  | **Enterprise**   | *(Enterprise only)* Monthly cumulative cost* (all sessions) and days remaining in billing period.                                                                            |
+| 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI.                                                                                  |
+| 6b  | **Services**     | Auth status for MCP services (green = authenticated, red = not): Notion MCP, Atlassian MCP, Figma MCP.                                                                       |
+
+\* Cost is estimated, and requires the cost tracking hook to function.
+
+#### Detected languages
+
+The branch segment appends an icon for the detected project language:
+
+- Terraform
+- Node.js
+- TypeScript
+- Python
+- Rust
+- Go
+- Java
+- Perl
+- Shell
+
+### Caching
 
 Data is cached at multiple tiers to keep the status line fast:
 
