@@ -525,6 +525,7 @@ class ClaudeUsageInfo:
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
                 "User-Agent": USER_AGENT_STRING,
+                "anthropic-beta": "oauth-2025-04-20",
             },
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
