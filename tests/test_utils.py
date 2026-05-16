@@ -75,6 +75,7 @@ class TestFormatTimeRemaining:
     @pytest.mark.parametrize(
         "invalid_input",
         [
+            None,
             "",
             "not-a-date",
             "abc123",
@@ -222,3 +223,53 @@ class TestCache:
             cache.write({"a": 1})
             assert os.path.isdir(cache_dir)
             assert os.path.isfile(cache.path)
+
+
+# ------------------------------------------------------------------------------
+# SystemInfo.get_auth_mode
+# ------------------------------------------------------------------------------
+
+
+class TestGetAuthMode:
+    CREDS_ATTR = "_SystemInfo__get_creds_data"
+
+    def test_enterprise(self):
+        si = cc_sl.SystemInfo("s")
+        with patch.object(
+            cc_sl.SystemInfo,
+            self.CREDS_ATTR,
+            return_value={"claudeAiOauth": {"subscriptionType": "enterprise"}},
+        ):
+            assert si.get_auth_mode() == "enterprise"
+
+    def test_oauth(self):
+        si = cc_sl.SystemInfo("s")
+        with patch.object(
+            cc_sl.SystemInfo,
+            self.CREDS_ATTR,
+            return_value={"claudeAiOauth": {"accessToken": "abc"}},
+        ):
+            assert si.get_auth_mode() == "oauth"
+
+    def test_api_key_when_no_oauth_token(self):
+        si = cc_sl.SystemInfo("s")
+        with patch.object(
+            cc_sl.SystemInfo,
+            self.CREDS_ATTR,
+            return_value={"claudeAiOauth": {}},
+        ):
+            assert si.get_auth_mode() == "api_key"
+
+    def test_enterprise_wins_over_access_token(self):
+        si = cc_sl.SystemInfo("s")
+        with patch.object(
+            cc_sl.SystemInfo,
+            self.CREDS_ATTR,
+            return_value={
+                "claudeAiOauth": {
+                    "subscriptionType": "enterprise",
+                    "accessToken": "abc",
+                }
+            },
+        ):
+            assert si.get_auth_mode() == "enterprise"
