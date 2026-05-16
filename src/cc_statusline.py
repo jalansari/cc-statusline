@@ -45,6 +45,7 @@ ICON_WINDOW_QUOTA = "\u25eb"  # ◫ (white square with vertical bisecting line)
 ICON_WEEK_QUOTA = "\uef38"  #  (calendar week)
 ICON_CURRENT_CONTEXT = "\u25d0"  # ◐ (circle with left half black)
 ICON_ENTERPRISE = "\ueebf"  #  (enterprise plan)
+ICON_API_KEY = "\U000f109b"  # 󱂛 (API key)
 
 ICON_NOTION = "\ue848"  #  (notion)
 ICON_ATLASSIAN_CLI = "\ue75c"  #  (atlassian jira)
@@ -351,6 +352,16 @@ class SystemInfo:
             self.__get_creds_data().get("claudeAiOauth", {}).get("subscriptionType", "")
         )
 
+    def get_auth_mode(self) -> str:
+        """Returns 'enterprise', 'oauth', or 'api_key'."""
+        creds = self.__get_creds_data()
+        oauth = creds.get("claudeAiOauth", {})
+        if oauth.get("subscriptionType") == "enterprise":
+            return "enterprise"
+        if oauth.get("accessToken"):
+            return "oauth"
+        return "api_key"
+
     @staticmethod
     def get_days_remaining_in_month() -> int:
         today = datetime.now()
@@ -644,7 +655,7 @@ def _format_time_remaining(resets_at: str) -> str:
         else:
             days = hours // 24
             ret = f"{days:.1f}d"
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, AttributeError):
         pass
     return ret
 
@@ -677,9 +688,9 @@ def render_statusline() -> str:
     session_id = claude_info.get_session_id()
     sysinfo = SystemInfo(session_id)
     sysinfo.initialise()
-    is_enterprise = sysinfo.get_subscription_type() == "enterprise"
+    auth_mode = sysinfo.get_auth_mode()
     usage: ClaudeUsageInfo | None = None
-    if not is_enterprise:
+    if auth_mode == "oauth":
         usage = ClaudeUsageInfo(session_id)
         usage.initialise()
 
@@ -750,9 +761,10 @@ def render_statusline() -> str:
     else:
         monthly_cost = sysinfo.get_monthly_cost() + cost_usd
         days_left = sysinfo.get_days_remaining_in_month()
+        icon = ICON_ENTERPRISE if auth_mode == "enterprise" else ICON_API_KEY
         segments.append(
             Segment(
-                f" {ICON_ENTERPRISE}  ${monthly_cost:.2f} {days_left}d ",
+                f" {icon}  ${monthly_cost:.2f} {days_left}d ",
                 C_ENTERPRISE_FG,
                 C_ENTERPRISE_BG,
             )
