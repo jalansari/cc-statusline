@@ -89,7 +89,7 @@ Example (Pro/Max plan):
  my-app   >   feat/abc123   >   Opus 4.6   >   12% | 58.3k | 1.42$   >   34% (2h05m)   >   61% (4.2d)   >   cli | mcp
 ```
 
-Example (Enterprise plan):
+Example (Enterprise plan / Anthropic API key):
 
 ```
  my-app   >   feat/abc123   >   Opus 4.6   >   12% | 58.3k | 1.42$   >   $78.50 22d   >   cli | mcp
@@ -105,7 +105,7 @@ Example (Enterprise plan):
 | 4   | **Context**      | Context window usage: percentage, input tokens, and session cost (USD). Turns red at 80%+ usage.                                                                             |
 | 5a  | **Window quota** | *(Pro/Max only)* 5-hour rolling usage percentage and time until reset.                                                                                                       |
 | 5b  | **Weekly quota** | *(Pro/Max only)* 7-day usage percentage and time until reset.                                                                                                                |
-| 5c  | **Enterprise**   | *(Enterprise only)* Monthly cumulative cost* (all sessions) and days remaining in billing period.                                                                            |
+| 5c  | **Cumulative**   | *(Enterprise / API key only)* Monthly cumulative cost* (all sessions) and days remaining in billing period.                                                                  |
 | 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI.                                                                                  |
 | 6b  | **Services**     | Auth status for MCP services (green = authenticated, red = not): Notion MCP, Atlassian MCP, Figma MCP.                                                                       |
 
