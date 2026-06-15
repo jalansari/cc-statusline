@@ -732,7 +732,7 @@ def render_statusline() -> str:
     cost_usd = claude_info.get_cost_usd()
     segments.append(
         Segment(
-            f" {ICON_CURRENT_CONTEXT} {current_context_pct}% | {current_used} | {cost_usd:.2f}$ ",
+            f" {ICON_CURRENT_CONTEXT} {current_context_pct}% | {current_used} | ${cost_usd:.2f} ",
             ctx_fg,
             C_TOKENS_CURR_BG,
             bold=True,
