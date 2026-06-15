@@ -25,8 +25,10 @@ license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
     "Environment :: Console",
-    "Operating System :: OS Independent",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
 ]
 dynamic = ["version"]
 
@@ -34,7 +36,7 @@ dynamic = ["version"]
 test = [
     "pytest==9.0.3",
     "pytest-cov==7.1.0",
-    "black==26.5.0",
+    "black==26.5.1",
     "flake8==7.3.0",
     "isort==8.0.1",
 ]

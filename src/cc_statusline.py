@@ -79,6 +79,11 @@ CACHE_DIR = os.path.join(
 )
 
 
+def _config_dir() -> str:
+    """Return the Claude config directory, honouring CLAUDE_CONFIG_DIR."""
+    return os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
+
+
 @dataclass(slots=True)
 class LangDetectRules:
     icon: str
@@ -319,7 +324,7 @@ class SystemInfo:
 
     @staticmethod
     def __fetch_monthly_cost(session_id: str) -> float:
-        csv_path = os.path.expanduser("~/.claude/claude-token-usage.csv")
+        csv_path = os.path.join(_config_dir(), "cc-costtrack", "claude-token-usage.csv")
         month_prefix = datetime.now().strftime("%Y-%m")
         total = 0.0
         try:
@@ -339,7 +344,7 @@ class SystemInfo:
 
     def __get_creds_data(self) -> dict:
         if not self._creds_data:
-            creds_path = os.path.expanduser("~/.claude/.credentials.json")
+            creds_path = os.path.join(_config_dir(), ".credentials.json")
             try:
                 with open(creds_path) as creds_file:
                     self._creds_data = json.load(creds_file)
@@ -375,7 +380,12 @@ class SystemInfo:
     def __get_registered_mcp_servers() -> set[str]:
         """Collect all MCP server names registered across any project in .claude.json."""
         servers: set[str] = set()
-        config_path = os.path.expanduser("~/.claude.json")
+        config_dir = os.environ.get("CLAUDE_CONFIG_DIR")
+        config_path = (
+            os.path.join(config_dir, ".claude.json")
+            if config_dir
+            else os.path.expanduser("~/.claude.json")
+        )
         try:
             with open(config_path) as f:
                 data = json.load(f)
@@ -473,7 +483,7 @@ class ClaudeUsageInfo:
     @staticmethod
     def __get_bearer_token() -> tuple[str, str] | None:
         ret = None
-        creds_path = os.path.expanduser("~/.claude/.credentials.json")
+        creds_path = os.path.join(_config_dir(), ".credentials.json")
         try:
             with open(creds_path) as creds_file:
                 creds = json.load(creds_file)
@@ -516,7 +526,7 @@ class ClaudeUsageInfo:
         new_refresh = refresh_data.get("refreshToken", "")
         if not new_access:
             return
-        creds_path = os.path.expanduser("~/.claude/.credentials.json")
+        creds_path = os.path.join(_config_dir(), ".credentials.json")
         try:
             with open(creds_path) as f:
                 creds = json.load(f)
