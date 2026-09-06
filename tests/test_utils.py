@@ -276,6 +276,41 @@ class TestGetAuthMode:
 
 
 # ------------------------------------------------------------------------------
+# _config_dir fallback semantics
+# ------------------------------------------------------------------------------
+
+
+class TestConfigDir:
+    def test_unset_falls_back_to_home_claude(self, tmp_path):
+        with patch.dict(os.environ, {"HOME": str(tmp_path)}, clear=True):
+            assert cc_sl._config_dir() == os.path.join(str(tmp_path), ".claude")
+
+    def test_set_value_is_used_verbatim(self, tmp_path):
+        alt = tmp_path / ".claude-alt"
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(alt)}):
+            assert cc_sl._config_dir() == str(alt)
+
+    def test_empty_value_does_not_fall_back_to_home(self, tmp_path):
+        # Claude Code falls back only when the variable is unset; a variable
+        # set to an empty string stays empty and resolves against the cwd, so
+        # it never becomes ~/.claude.
+        env = {"HOME": str(tmp_path), "CLAUDE_CONFIG_DIR": ""}
+        with patch.dict(os.environ, env, clear=True):
+            assert cc_sl._config_dir() == ""
+
+    def test_empty_value_keys_a_different_profile_than_home_claude(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(tmp_path)
+        with patch.dict(os.environ, {"HOME": str(tmp_path)}, clear=True):
+            home_key = cc_sl._profile_key()
+        env = {"HOME": str(tmp_path), "CLAUDE_CONFIG_DIR": ""}
+        with patch.dict(os.environ, env, clear=True):
+            empty_key = cc_sl._profile_key()
+        assert home_key != empty_key
+
+
+# ------------------------------------------------------------------------------
 # _profile_key and per-profile usage cache paths
 # ------------------------------------------------------------------------------
 
@@ -312,6 +347,40 @@ class TestProfileKey:
     def test_stable_across_calls(self, tmp_path):
         with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(tmp_path)}):
             assert cc_sl._profile_key() == cc_sl._profile_key()
+
+    # The test cases, using unusual config dirs may not be valid usage, but we
+    # handle the edge case paths anyway, resulting with a fall-back to "claude".
+
+    def test_root_config_dir_falls_back_to_default_slug(self):
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": "/"}):
+            assert cc_sl._profile_key().startswith("claude_")
+
+    def test_all_dot_basename_falls_back_to_default_slug(self, tmp_path):
+        dots = tmp_path / "..."
+        dots.mkdir()
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(dots)}):
+            assert cc_sl._profile_key().startswith("claude_")
+
+    def test_fallback_never_yields_an_empty_slug(self, tmp_path):
+        dots = tmp_path / "..."
+        dots.mkdir()
+        for config_dir in ("/", str(dots)):
+            with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": config_dir}):
+                slug, _, digest = cc_sl._profile_key().rpartition("_")
+                assert slug
+                assert len(digest) == 8
+
+    def test_fallback_slug_still_keys_distinctly_from_real_default(self, tmp_path):
+        default = tmp_path / ".claude"
+        default.mkdir()
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(default)}):
+            default_key = cc_sl._profile_key()
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": "/"}):
+            root_key = cc_sl._profile_key()
+        # Both slugs read "claude"; only the realpath hash keeps them apart.
+        assert default_key.startswith("claude_")
+        assert root_key.startswith("claude_")
+        assert default_key != root_key
 
 
 class TestUsageCacheIsPerProfile:
