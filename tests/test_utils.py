@@ -273,3 +273,81 @@ class TestGetAuthMode:
             },
         ):
             assert si.get_auth_mode() == "enterprise"
+
+
+# ------------------------------------------------------------------------------
+# _profile_key and per-profile usage cache paths
+# ------------------------------------------------------------------------------
+
+
+class TestProfileKey:
+    def test_default_config_dir(self):
+        with patch.dict(os.environ, {}, clear=True):
+            assert cc_sl._profile_key().startswith("claude_")
+
+    def test_slug_comes_from_config_dir_basename(self, tmp_path):
+        alt = tmp_path / ".claude-alt"
+        alt.mkdir()
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(alt)}):
+            assert cc_sl._profile_key().startswith("claude-alt_")
+
+    def test_differs_between_profiles(self, tmp_path):
+        keys = set()
+        for name in (".claude", ".claude-alt"):
+            path = tmp_path / name
+            path.mkdir()
+            with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(path)}):
+                keys.add(cc_sl._profile_key())
+        assert len(keys) == 2
+
+    def test_same_basename_different_parent_does_not_collide(self, tmp_path):
+        keys = set()
+        for parent in ("work", "personal"):
+            path = tmp_path / parent / ".claude"
+            path.mkdir(parents=True)
+            with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(path)}):
+                keys.add(cc_sl._profile_key())
+        assert len(keys) == 2
+
+    def test_stable_across_calls(self, tmp_path):
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(tmp_path)}):
+            assert cc_sl._profile_key() == cc_sl._profile_key()
+
+
+class TestUsageCacheIsPerProfile:
+    @staticmethod
+    def __paths_for(config_dir, cache_dir):
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(config_dir)}):
+            with patch.object(cc_sl, "CACHE_DIR", str(cache_dir)):
+                usage = cc_sl.ClaudeUsageInfo("session")
+                return usage.cache.path, usage.backoff_file
+
+    def test_two_profiles_get_distinct_cache_and_backoff_paths(self, tmp_path):
+        first = tmp_path / ".claude"
+        second = tmp_path / ".claude-alt"
+        first.mkdir()
+        second.mkdir()
+        cache_dir = tmp_path / "cache"
+
+        first_cache, first_backoff = self.__paths_for(first, cache_dir)
+        second_cache, second_backoff = self.__paths_for(second, cache_dir)
+
+        assert first_cache != second_cache
+        assert first_backoff != second_backoff
+
+    def test_backoff_marker_only_affects_its_own_profile(self, tmp_path):
+        first = tmp_path / ".claude"
+        second = tmp_path / ".claude-alt"
+        first.mkdir()
+        second.mkdir()
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+
+        _, first_backoff = self.__paths_for(first, cache_dir)
+        with open(first_backoff, "w"):
+            pass
+
+        with patch.dict(os.environ, {"CLAUDE_CONFIG_DIR": str(second)}):
+            with patch.object(cc_sl, "CACHE_DIR", str(cache_dir)):
+                usage = cc_sl.ClaudeUsageInfo("session")
+                assert not os.path.exists(usage.backoff_file)

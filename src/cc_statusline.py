@@ -2,6 +2,7 @@
 
 import calendar
 import csv
+import hashlib
 import json
 import os
 import subprocess
@@ -82,6 +83,13 @@ CACHE_DIR = os.path.join(
 def _config_dir() -> str:
     """Return the Claude config directory, honouring CLAUDE_CONFIG_DIR."""
     return os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
+
+
+def _profile_key() -> str:
+    """Cache key for the active config dir, e.g. '.claude-alt' -> 'claude-alt'."""
+    path = os.path.realpath(_config_dir())
+    slug = os.path.basename(path).lstrip(".") or "claude"
+    return f"{slug}_{hashlib.sha256(path.encode()).hexdigest()[:8]}"
 
 
 @dataclass(slots=True)
@@ -440,10 +448,10 @@ class ClaudeUsageInfo:
     CLAUDE_CODE_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 
     def __init__(self, session_id: str) -> None:
-        self.cache = Cache("shared_usage_cache.json", 300)
+        profile = _profile_key()
+        self.cache = Cache(f"shared_usage_cache_{profile}.json", 300)
+        self.backoff_file = os.path.join(CACHE_DIR, f"usage_backoff_{profile}")
         self._data: dict = {}
-
-    BACKOFF_FILE = os.path.join(CACHE_DIR, "usage_backoff")
 
     def initialise(self) -> None:
         self._data = self.cache.read()
@@ -458,14 +466,14 @@ class ClaudeUsageInfo:
 
     def __is_backing_off(self) -> bool:
         try:
-            age = time.time() - os.path.getmtime(self.BACKOFF_FILE)
+            age = time.time() - os.path.getmtime(self.backoff_file)
             return age < 300  # 5 minute backoff after failure
         except OSError:
             return False
 
     def __set_backoff(self) -> None:
         os.makedirs(CACHE_DIR, exist_ok=True)
-        with open(self.BACKOFF_FILE, "w") as f:
+        with open(self.backoff_file, "w") as f:
             f.write("")
 
     def get_window_pct(self) -> float:
