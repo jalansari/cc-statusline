@@ -81,8 +81,23 @@ CACHE_DIR = os.path.join(
 
 
 def _config_dir() -> str:
-    """Return the Claude config directory, honouring CLAUDE_CONFIG_DIR."""
-    return os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
+    """Return the Claude config directory, honouring CLAUDE_CONFIG_DIR.
+
+    Claude Code treats an unset variable differently from one set to an empty
+    string.
+
+    Only an unset variable falls back to ~/.claude; a variable that is set but
+    empty is kept as-is, which makes Claude Code resolve its config home
+    against the current working directory instead.
+
+    Mirroring that distinction allows us to read the profile Claude Code is
+    actually writing, hence this deliberately tests for None rather than for
+    emptiness.
+    """
+    config_dir = os.environ.get("CLAUDE_CONFIG_DIR")
+    if config_dir is None:
+        return os.path.expanduser("~/.claude")
+    return config_dir
 
 
 def _profile_key() -> str:
