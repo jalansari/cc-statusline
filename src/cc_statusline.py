@@ -228,6 +228,7 @@ class McpServer:
 
     icon: str
     name: str
+    needs_auth: bool = True
 
     @property
     def creds_prefix(self) -> str:
@@ -238,13 +239,16 @@ class McpServer:
 # Order here is the order the icons appear in the status line. A server is only
 # drawn when it is registered in .claude.json, so this list can name servers
 # that only some machines have.
+#
+# needs_auth=False marks a server that never authenticates.  Registering the MCP
+# is all we need to check, and skip any auth credentials checks.
 MCP_SERVERS: list[McpServer] = [
     McpServer(ICON_NOTION, "notion"),
     McpServer(ICON_ATLASSIAN, "atlassian"),
     McpServer(ICON_FIGMA, "figma"),
     McpServer(ICON_DATADOG, "datadog-mcp"),
     McpServer(ICON_MIXPANEL, "mixpanel"),
-    McpServer(ICON_OPENTOFU, "opentofu"),
+    McpServer(ICON_OPENTOFU, "opentofu", needs_auth=False),
 ]
 
 
@@ -453,7 +457,7 @@ class SystemInfo:
         return servers
 
     def __fetch_mcp_status(self) -> dict:
-        """Map each *registered* MCP server to whether its auth is live.
+        """Map each *registered* MCP server to whether it is healthy.
 
         Servers absent from .claude.json are omitted rather than reported as
         failed, so the status line only shows what this machine uses.
@@ -462,10 +466,16 @@ class SystemInfo:
         """
         registered = self.__get_registered_mcp_servers()
         return {
-            server.name: self.__mcp_has_token(server.creds_prefix)
+            server.name: self.__mcp_server_ok(server)
             for server in MCP_SERVERS
             if server.name in registered
         }
+
+    def __mcp_server_ok(self, server: McpServer) -> bool:
+        if not server.needs_auth:
+            # A server needing no auth is just healthy.
+            return True
+        return self.__mcp_has_token(server.creds_prefix)
 
     def __mcp_has_token(self, prefix: str) -> bool:
         """True when a non-expired access token exists for this server."""
