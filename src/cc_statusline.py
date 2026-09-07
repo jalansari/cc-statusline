@@ -52,6 +52,9 @@ ICON_NOTION = "\ue848"  #  (notion)
 ICON_ATLASSIAN_CLI = "\ue75c"  #  (atlassian jira)
 ICON_ATLASSIAN = "\uef32"  #  (atlassian)
 ICON_FIGMA = "\ue7da"  #  (figma)
+ICON_DATADOG = "\ue902"  #  (datadog)
+ICON_MIXPANEL = "\U000f0b05"  # 󰬅 (mixpanel)
+ICON_OPENTOFU = "\U000f1062"  # 󱁢 (opentofu)
 ICON_GITHUB = "\uea84"  #  (github)
 ICON_PERL = "\ue67e"  #  (perl)
 ICON_PYTHON = "\ue73c"  #  (python)
@@ -219,6 +222,32 @@ LANG_DETECT_RULES: list[LangDetectRules] = [
 ]
 
 
+@dataclass(slots=True)
+class McpServer:
+    """An MCP server whose auth state is shown in the status line."""
+
+    icon: str
+    name: str
+
+    @property
+    def creds_prefix(self) -> str:
+        """Credentials are keyed "<server name>|<hash>" in mcpOAuth."""
+        return f"{self.name}|"
+
+
+# Order here is the order the icons appear in the status line. A server is only
+# drawn when it is registered in .claude.json, so this list can name servers
+# that only some machines have.
+MCP_SERVERS: list[McpServer] = [
+    McpServer(ICON_NOTION, "notion"),
+    McpServer(ICON_ATLASSIAN, "atlassian"),
+    McpServer(ICON_FIGMA, "figma"),
+    McpServer(ICON_DATADOG, "datadog-mcp"),
+    McpServer(ICON_MIXPANEL, "mixpanel"),
+    McpServer(ICON_OPENTOFU, "opentofu"),
+]
+
+
 class Cache:
     def __init__(self, filename: str, ttl: int = 5):
         self.path = os.path.join(CACHE_DIR, filename)
@@ -269,9 +298,7 @@ class SystemInfo:
             self._data_medium = {
                 "acli_authd": self.__check_command_success(["acli", "auth", "status"]),
                 "gh_authd": self.__check_command_success(["gh", "auth", "status"]),
-                "notion_mcp_authd": self.__mcp_has_token("notion|", "notion"),
-                "atlassian_mcp_authd": self.__mcp_has_token("atlassian|", "atlassian"),
-                "figma_mcp_authd": self.__mcp_has_token("figma|", "figma"),
+                "mcp_status": self.__fetch_mcp_status(),
             }
             self.cache_10s.write(self._data_medium)
 
@@ -304,14 +331,13 @@ class SystemInfo:
     def get_gh_authd(self) -> bool:
         return self._data_medium.get("gh_authd", False)
 
-    def get_notion_mcp_authd(self) -> bool:
-        return self._data_medium.get("notion_mcp_authd", False)
+    def get_mcp_status(self) -> dict:
+        """Registered MCP servers only, mapped to whether auth is live.
 
-    def get_atlassian_mcp_authd(self) -> bool:
-        return self._data_medium.get("atlassian_mcp_authd", False)
-
-    def get_figma_mcp_authd(self) -> bool:
-        return self._data_medium.get("figma_mcp_authd", False)
+        A server missing from this dict is not registered in .claude.json and is
+        left out of the status line entirely.
+        """
+        return self._data_medium.get("mcp_status", {})
 
     # -- Private fetchers --
 
@@ -426,10 +452,23 @@ class SystemInfo:
             pass
         return servers
 
-    def __mcp_has_token(self, prefix: str, server_name: str) -> bool:
-        # Must be registered as an MCP server in at least one project
-        if server_name not in self.__get_registered_mcp_servers():
-            return False
+    def __fetch_mcp_status(self) -> dict:
+        """Map each *registered* MCP server to whether its auth is live.
+
+        Servers absent from .claude.json are omitted rather than reported as
+        failed, so the status line only shows what this machine uses.
+
+        The registry is read once here, not once per server.
+        """
+        registered = self.__get_registered_mcp_servers()
+        return {
+            server.name: self.__mcp_has_token(server.creds_prefix)
+            for server in MCP_SERVERS
+            if server.name in registered
+        }
+
+    def __mcp_has_token(self, prefix: str) -> bool:
+        """True when a non-expired access token exists for this server."""
         now_ms = int(time.time() * 1000)
         for k, v in self.__get_mcp_oauth_creds().items():
             if k.startswith(prefix) and isinstance(v, dict):
@@ -803,18 +842,19 @@ def render_statusline() -> str:
             )
         )
 
-    # Atlassian segments (acli auth + MCP auth, independently colored)
+    # Auth status icons: CLI tools, then MCP servers, each colored independently
     gh_color = C_AUTHD_OK if sysinfo.get_gh_authd() else C_AUTHD_FAIL
     acli_color = C_AUTHD_OK if sysinfo.get_acli_authd() else C_AUTHD_FAIL
-    notion_color = C_AUTHD_OK if sysinfo.get_notion_mcp_authd() else C_AUTHD_FAIL
-    mcp_color = C_AUTHD_OK if sysinfo.get_atlassian_mcp_authd() else C_AUTHD_FAIL
-    figma_color = C_AUTHD_OK if sysinfo.get_figma_mcp_authd() else C_AUTHD_FAIL
+    mcp_status = sysinfo.get_mcp_status()
+    mcp_icons = "".join(
+        f" {fg(C_AUTHD_OK if authd else C_AUTHD_FAIL)}{server.icon}"
+        for server in MCP_SERVERS
+        if (authd := mcp_status.get(server.name)) is not None
+    )
     status_text = (
         f" {fg(gh_color)}{ICON_GITHUB}"
-        f" {fg(acli_color)}{ICON_ATLASSIAN_CLI} |"
-        f" {fg(notion_color)}{ICON_NOTION}"
-        f" {fg(mcp_color)}{ICON_ATLASSIAN}"
-        f" {fg(figma_color)}{ICON_FIGMA}  "
+        f" {fg(acli_color)}{ICON_ATLASSIAN_CLI}"
+        f"{' |' if mcp_icons else ''}{mcp_icons}  "
     )
     # fg_color unused here since we embed colors inline; set to 0
     segments.append(Segment(status_text, 0, C_STATUS_ICONS_BG))
