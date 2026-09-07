@@ -30,6 +30,12 @@ Recommendation is to install either:
 - FiraCode Nerd Font
 - JetBrainsMono Nerd Font
 
+Nerd Fonts **3.5.1** or newer is recommended. Earlier releases are missing some
+icons, such as Datadog.
+
+If an icon renders blank, or as an unexpected glyph, upgrade your Nerd Font then
+restart your terminal.
+
 ## Installation
 
 ```bash
@@ -97,19 +103,24 @@ Example (Enterprise plan / Anthropic API key):
 
 #### Segment breakdown
 
-| #   | Segment          | Description                                                                                                                                                                  |
-| --- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Directory**    | Current working directory name.                                                                                                                                              |
-| 2   | **Git branch**   | Branch name with color coding: red for `main`/`master`, yellow for `staging`, blue otherwise. Shows worktree icon if in a worktree. And, language icon, based on best guess. |
-| 3   | **Model**        | Active Claude model name.                                                                                                                                                    |
-| 4   | **Context**      | Context window usage: percentage, input tokens, and session cost (USD). Turns red at 80%+ usage.                                                                             |
-| 5a  | **Window quota** | *(Pro/Max only)* 5-hour rolling usage percentage and time until reset.                                                                                                       |
-| 5b  | **Weekly quota** | *(Pro/Max only)* 7-day usage percentage and time until reset.                                                                                                                |
-| 5c  | **Cumulative**   | *(Enterprise / API key only)* Monthly cumulative cost* (all sessions) and days remaining in billing period.                                                                  |
-| 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI.                                                                                  |
-| 6b  | **Services**     | Auth status for MCP services (green = authenticated, red = not): Notion MCP, Atlassian MCP, Figma MCP.                                                                       |
+| #   | Segment          | Description                                                                                                 |
+| --- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1   | **Directory**    | Current working directory name.                                                                             |
+| 2   | **Git branch**   | Branch name with color coding: red for `main`/`master`, yellow for `staging`, blue otherwise.               |
+| 2a  | **Git worktree** | Shows worktree icon if in a worktree.                                                                       |
+| 2b  | **Language**     | Language icon, based on best guess.                                                                         |
+| 3   | **Model**        | Active Claude model name.                                                                                   |
+| 4   | **Context**      | Context window usage: percentage, input tokens, and session cost (USD). Turns red at 80%+ usage.            |
+| 5a  | **Window quota** | *(Pro/Max only)* 5-hour rolling usage percentage and time until reset.                                      |
+| 5b  | **Weekly quota** | *(Pro/Max only)* 7-day usage percentage and time until reset.                                               |
+| 5c  | **Cumulative**   | *(Enterprise / API key only)* Monthly cumulative cost* (all sessions) and days remaining in billing period. |
+| 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI.                 |
+| 6b  | **Services**     | Auth status for registered MCP services†: Notion, Atlassian, Figma, Datadog, Mixpanel, OpenTofu.            |
 
 \* Cost is estimated, and requires the cost tracking hook to function.
+
+† Only MCP services registered in `.claude.json` are shown. Services that need
+no auth (OpenTofu) always show green.
 
 #### Detected languages
 
@@ -122,8 +133,10 @@ The branch segment appends an icon for the detected project language:
 - Rust
 - Go
 - Java
+- Ruby
 - Perl
 - Shell
+- Docker
 
 ### Caching
 
