@@ -52,6 +52,9 @@ ICON_NOTION = "\ue848"  #  (notion)
 ICON_ATLASSIAN_CLI = "\ue75c"  #  (atlassian jira)
 ICON_ATLASSIAN = "\uef32"  #  (atlassian)
 ICON_FIGMA = "\ue7da"  #  (figma)
+ICON_DATADOG = "\ue902"  #  (datadog)
+ICON_MIXPANEL = "\U000f0b05"  # 󰬅 (mixpanel)
+ICON_OPENTOFU = "\U000f1062"  # 󱁢 (opentofu)
 ICON_GITHUB = "\uea84"  #  (github)
 ICON_PERL = "\ue67e"  #  (perl)
 ICON_PYTHON = "\ue73c"  #  (python)
@@ -272,6 +275,11 @@ class SystemInfo:
                 "notion_mcp_authd": self.__mcp_has_token("notion|", "notion"),
                 "atlassian_mcp_authd": self.__mcp_has_token("atlassian|", "atlassian"),
                 "figma_mcp_authd": self.__mcp_has_token("figma|", "figma"),
+                "datadog_mcp_authd": self.__mcp_has_token(
+                    "datadog-mcp|", "datadog-mcp"
+                ),
+                "mixpanel_mcp_authd": self.__mcp_has_token("mixpanel|", "mixpanel"),
+                "opentofu_mcp_authd": self.__mcp_has_token("opentofu|", "opentofu"),
             }
             self.cache_10s.write(self._data_medium)
 
@@ -312,6 +320,15 @@ class SystemInfo:
 
     def get_figma_mcp_authd(self) -> bool:
         return self._data_medium.get("figma_mcp_authd", False)
+
+    def get_datadog_mcp_authd(self) -> bool:
+        return self._data_medium.get("datadog_mcp_authd", False)
+
+    def get_mixpanel_mcp_authd(self) -> bool:
+        return self._data_medium.get("mixpanel_mcp_authd", False)
+
+    def get_opentofu_mcp_authd(self) -> bool:
+        return self._data_medium.get("opentofu_mcp_authd", False)
 
     # -- Private fetchers --
 
@@ -803,18 +820,24 @@ def render_statusline() -> str:
             )
         )
 
-    # Atlassian segments (acli auth + MCP auth, independently colored)
+    # Auth status icons: CLI tools, then MCP servers, each colored independently
     gh_color = C_AUTHD_OK if sysinfo.get_gh_authd() else C_AUTHD_FAIL
     acli_color = C_AUTHD_OK if sysinfo.get_acli_authd() else C_AUTHD_FAIL
     notion_color = C_AUTHD_OK if sysinfo.get_notion_mcp_authd() else C_AUTHD_FAIL
-    mcp_color = C_AUTHD_OK if sysinfo.get_atlassian_mcp_authd() else C_AUTHD_FAIL
+    atlassian_color = C_AUTHD_OK if sysinfo.get_atlassian_mcp_authd() else C_AUTHD_FAIL
     figma_color = C_AUTHD_OK if sysinfo.get_figma_mcp_authd() else C_AUTHD_FAIL
+    datadog_color = C_AUTHD_OK if sysinfo.get_datadog_mcp_authd() else C_AUTHD_FAIL
+    mixpanel_color = C_AUTHD_OK if sysinfo.get_mixpanel_mcp_authd() else C_AUTHD_FAIL
+    opentofu_color = C_AUTHD_OK if sysinfo.get_opentofu_mcp_authd() else C_AUTHD_FAIL
     status_text = (
         f" {fg(gh_color)}{ICON_GITHUB}"
         f" {fg(acli_color)}{ICON_ATLASSIAN_CLI} |"
         f" {fg(notion_color)}{ICON_NOTION}"
-        f" {fg(mcp_color)}{ICON_ATLASSIAN}"
-        f" {fg(figma_color)}{ICON_FIGMA}  "
+        f" {fg(atlassian_color)}{ICON_ATLASSIAN}"
+        f" {fg(figma_color)}{ICON_FIGMA}"
+        f" {fg(datadog_color)}{ICON_DATADOG}"
+        f" {fg(mixpanel_color)}{ICON_MIXPANEL}"
+        f" {fg(opentofu_color)}{ICON_OPENTOFU}  "
     )
     # fg_color unused here since we embed colors inline; set to 0
     segments.append(Segment(status_text, 0, C_STATUS_ICONS_BG))
