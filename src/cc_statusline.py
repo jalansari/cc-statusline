@@ -302,6 +302,7 @@ class SystemInfo:
             self._data_medium = {
                 "acli_authd": self.__check_command_success(["acli", "auth", "status"]),
                 "gh_authd": self.__check_command_success(["gh", "auth", "status"]),
+                "ntn_authd": self.__check_command_success(["ntn", "whoami"]),
                 "mcp_status": self.__fetch_mcp_status(),
             }
             self.cache_10s.write(self._data_medium)
@@ -334,6 +335,9 @@ class SystemInfo:
 
     def get_gh_authd(self) -> bool:
         return self._data_medium.get("gh_authd", False)
+
+    def get_ntn_authd(self) -> bool:
+        return self._data_medium.get("ntn_authd", False)
 
     def get_mcp_status(self) -> dict:
         """Registered MCP servers only, mapped to whether auth is live.
@@ -431,7 +435,7 @@ class SystemInfo:
 
     @staticmethod
     def __get_registered_mcp_servers() -> set[str]:
-        """Collect all MCP server names registered across any project in .claude.json."""
+        """Collect MCP server names registered across any project in .claude.json."""
         servers: set[str] = set()
         config_dir = os.environ.get("CLAUDE_CONFIG_DIR")
         config_path = (
@@ -814,7 +818,8 @@ def render_statusline() -> str:
     cost_usd = claude_info.get_cost_usd()
     segments.append(
         Segment(
-            f" {ICON_CURRENT_CONTEXT} {current_context_pct}% | {current_used} | ${cost_usd:.2f} ",
+            f" {ICON_CURRENT_CONTEXT} {current_context_pct}%"
+            f" | {current_used} | ${cost_usd:.2f} ",
             ctx_fg,
             C_TOKENS_CURR_BG,
             bold=True,
@@ -855,6 +860,7 @@ def render_statusline() -> str:
     # Auth status icons: CLI tools, then MCP servers, each colored independently
     gh_color = C_AUTHD_OK if sysinfo.get_gh_authd() else C_AUTHD_FAIL
     acli_color = C_AUTHD_OK if sysinfo.get_acli_authd() else C_AUTHD_FAIL
+    ntn_color = C_AUTHD_OK if sysinfo.get_ntn_authd() else C_AUTHD_FAIL
     mcp_status = sysinfo.get_mcp_status()
     mcp_icons = "".join(
         f" {fg(C_AUTHD_OK if authd else C_AUTHD_FAIL)}{server.icon}"
@@ -864,6 +870,7 @@ def render_statusline() -> str:
     status_text = (
         f" {fg(gh_color)}{ICON_GITHUB}"
         f" {fg(acli_color)}{ICON_ATLASSIAN_CLI}"
+        f" {fg(ntn_color)}{ICON_NOTION}"
         f"{' |' if mcp_icons else ''}{mcp_icons}  "
     )
     # fg_color unused here since we embed colors inline; set to 0

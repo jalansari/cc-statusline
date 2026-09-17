@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
+
 import pytest
 
 import cc_statusline as cc_sl
