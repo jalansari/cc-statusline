@@ -114,7 +114,7 @@ Example (Enterprise plan / Anthropic API key):
 | 5a  | **Window quota** | *(Pro/Max only)* 5-hour rolling usage percentage and time until reset.                                      |
 | 5b  | **Weekly quota** | *(Pro/Max only)* 7-day usage percentage and time until reset.                                               |
 | 5c  | **Cumulative**   | *(Enterprise / API key only)* Monthly cumulative cost* (all sessions) and days remaining in billing period. |
-| 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI.                 |
+| 6a  | **CLI Services** | Auth status for CLI services (green = authenticated, red = not): GitHub CLI, Atlassian CLI, Notion CLI.     |
 | 6b  | **Services**     | Auth status for registered MCP services†: Notion, Atlassian, Figma, Datadog, Mixpanel, OpenTofu.            |
 
 \* Cost is estimated, and requires the cost tracking hook to function.
